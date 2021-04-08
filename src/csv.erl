@@ -3,9 +3,9 @@
 %%
 %% It can only handle one type of separators (,)
 %% and simple strings
-%% 
+%%
 %% Version 0.2:
-%%   - comment (line starting with %) and 
+%%   - comment (line starting with %) and
 %%     annotation support (line starting with %@key value)
 %% Version 0.1:
 %%   - initial release
@@ -66,7 +66,7 @@ parse_binary_incremental(Bin, Counter, Annot) ->
                     parse_binary_incremental(Rest, Counter + 1, Annot);
                 {exit, Parent} ->
                     Parent ! exit
-            end 
+            end
     end.
 
 spawn_parser(File) ->
@@ -89,7 +89,7 @@ parse_incremental(Io, Counter) ->
                     Parent ! exit
             end;
         eof ->
-            receive 
+            receive
                 {more, Parent} ->
                     Parent ! {eof, Parent},
                     parse_incremental(Io, Counter);
@@ -109,7 +109,7 @@ kill({csv_reader, Pid}) ->
         {'DOWN', Ref, _, _, _} ->
             demonitor(Ref),
             ok
-    end.    
+    end.
 
 next_line(Reader) ->
     get_next_line(Reader).
@@ -130,7 +130,7 @@ get_next_line({csv_reader, Pid}) ->
             eof;
         {'DOWN', Ref, _, _, _} ->
             demonitor(Ref),
-            eof         
+            eof
     end.
 
 get_next_raw({csv_reader, Pid}) ->
@@ -215,6 +215,10 @@ parse_binary_line(<<$,, Rest/binary>>, Str, Acc) ->
 parse_binary_line(<<I, Rest/binary>>, Str, Acc) ->
     parse_binary_line(Rest, <<Str/binary, I>>, Acc).
 
+
+
+parse_binary_string(<<$", $", Rest/binary>>, Str, Acc) ->
+    parse_binary_string(Rest, <<Str/binary, "\"">>, Acc);
 parse_binary_string(<<$", $,, Rest/binary>>, Str, Acc) ->
     parse_binary_line(Rest, <<>>, [string:strip(binary_to_list(Str))|Acc]);
 parse_binary_string(<<$", Rest/binary>>, Str, Acc) ->
@@ -259,7 +263,7 @@ parse_line([End], Str, Acc) ->
                    Str;
                _ -> % NOTE: The last line of the file
                    [End|Str]
-           end, 
+           end,
     case Str0 of
         [] ->
             Acc;
@@ -300,7 +304,7 @@ annotation_test() ->
     ?assertEqual(1, Count).
 
 ignore_annotation_test() ->
-    {_, Csv} = binary_reader("../test/csv_comment.csv", [{annotations, false}]),    
+    {_, Csv} = binary_reader("../test/csv_comment.csv", [{annotations, false}]),
     {row, Line, Count} = next_line(Csv),
     ?assertEqual(["hello", "world"], Line),
     ?assertEqual(1, Count).
